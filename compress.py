@@ -2,11 +2,15 @@ import os
 import subprocess
 import sys
 
-
+# ------ CONFIG ------
 target_size_MB = 25
 max_size_MB = 25
-output_folder = 'C:\\Users\\Kenny\\Downloads\\'
+output_folder = ''
+# ------ CONFIG ------
 
+# Determine the Downloads folder dynamically
+if output_folder == "" and sys.platform == 'win32':
+    output_folder = os.path.join(os.environ['USERPROFILE'], 'Downloads') + '\\'
 
 def compress_video(input_file, target_size):
     output_file = output_folder + os.path.basename(input_file)
