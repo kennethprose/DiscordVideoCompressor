@@ -45,30 +45,35 @@ def compress_video(input_file, target_size):
     return output_file
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print("You must pass an input file as the first command line argument.")
         sys.exit(1)
 
-    input_file = sys.argv[1]
-    if not os.path.isfile(input_file):
-        print(f"File not found: {input_file}")
-        sys.exit(1)
+    # Iterate over arguments and compress each
+    for x in range(1, len(sys.argv)):
 
-    # Set initial target size
-    target_size = target_size_MB * 1024 * 1024
-    while True:
-        # Compress the file
-        output_file = compress_video(input_file, target_size=target_size)
-
-        # Check the size of the output file
-        output_file_size = os.path.getsize(output_file)
-        print(f'Output File Size: {round(output_file_size / (1024 * 1024), 2)}MB')
-
-        # If file is over absolute max, lower target and run again
-        if output_file_size > max_size_MB * 1024 * 1024:
-            print(f'Output size too large. Recompressing...')
-            target_size -= 1024 * 1024
-        else:
+        input_file = sys.argv[x]
+        if not os.path.isfile(input_file):
+            print(f"File not found: {input_file}")
             break
 
-    print(f"Compressed video saved as: {output_file}")
+        print(f"{'-'*15} {input_file} {'-'*15}")
+
+        # Set initial target size
+        target_size = target_size_MB * 1024 * 1024
+        while True:
+            # Compress the file
+            output_file = compress_video(input_file, target_size=target_size)
+
+            # Check the size of the output file
+            output_file_size = os.path.getsize(output_file)
+            print(f'Output File Size: {round(output_file_size / (1024 * 1024), 2)}MB')
+
+            # If file is over absolute max, lower target and run again
+            if output_file_size > max_size_MB * 1024 * 1024:
+                print(f'Output size too large. Recompressing...')
+                target_size -= 1024 * 1024
+            else:
+                break
+
+        print(f"Saved as: {output_file}\n")

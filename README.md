@@ -8,6 +8,7 @@ This script compresses a video file to a target size using `ffmpeg`. It ensures 
 - Nvidia's NVENC support for hardware-accelerated video encoding.
 - Automatically adjusts the bitrate to achieve best video quality while still being below the desired output size.
 - Preserves the original audio track.
+- Supports processing multiple files at once
 
 ## Prerequisites
 
@@ -35,12 +36,12 @@ The configuration can be changed by modifying the following variables at the beg
 
 ## Usage
 
-The easiest method is to just drag and drop the video file you want to be compressed onto the compress.bat file.
+The easiest method is to just drag and drop the video file(s) you want to be compressed onto the compress.bat file.
 
-For a more manual approach, run the script with the input video file as a command-line argument:
+For a more manual approach, run the script with the input video file(s) as a command-line argument:
 
 ```bash
-python compress_video.py <input_video_file>
+python compress_video.py <input_video_file1> <input_video_file2>
 ```
 
 For example:
