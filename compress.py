@@ -15,13 +15,14 @@ if output_folder == "" and sys.platform == 'win32':
 def compress_video(input_file, target_size):
     output_file = output_folder + os.path.basename(input_file)
 
-    # Get the duration of the video in seconds
+    # Get the duration and height of the video
     result = subprocess.run(
-        ['ffprobe', '-i', input_file, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=p=0'],
+        ['ffprobe', '-i', input_file, '-show_entries', 'format=duration:stream=height', '-v', 'quiet', '-of', 'csv=p=0'],
         stdout=subprocess.PIPE,
         universal_newlines=True
     )
-    duration = float(result.stdout.splitlines()[0])
+    height = int(result.stdout.splitlines()[0])
+    duration = float(result.stdout.splitlines()[2])
 
     # Calculate target bitrate in bits per second
     target_bitrate = (target_size * 8) / duration
@@ -36,10 +37,14 @@ def compress_video(input_file, target_size):
         '-b:v', str(int(target_bitrate)),
         '-bufsize', str(int(target_bitrate)),
         '-maxrate', str(int(target_bitrate)),
-        '-c:a', 'copy',
-        output_file
+        '-c:a', 'copy'
     ]
 
+    # Add scaling filter if resolution is greater than 1080p
+    if height > 1080:
+        cmd.extend(['-vf', 'scale=-1:1080'])
+
+    cmd.append(output_file)
     subprocess.run(cmd)
 
     return output_file
