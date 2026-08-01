@@ -1,6 +1,6 @@
 # Video Compression Script
 
-This script compresses a video file to a target size using `ffmpeg`. It ensures that the output file size is within the specified limit by adjusting the bitrate. This is ideal for applications like sending game clips on Discord since there is a 25MB file limit.
+This script compresses a video file to a target size using `ffmpeg`. It ensures that the output file size is within the specified limit by adjusting the bitrate. This is ideal for applications like sending game clips on Discord since there is a 10MB file limit.
 
 ## Features
 
