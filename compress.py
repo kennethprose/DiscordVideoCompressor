@@ -14,37 +14,84 @@ safety_margin = 0.97
 if output_folder == "" and sys.platform == 'win32':
     output_folder = os.path.join(os.environ['USERPROFILE'], 'Downloads') + '\\'
 
+def probe_video(input_file):
+    # Get height of the first video stream specifically
+    height_result = subprocess.run(
+        ['ffprobe', '-i', input_file, '-select_streams', 'v:0',
+         '-show_entries', 'stream=height', '-v', 'quiet', '-of', 'csv=p=0'],
+        stdout=subprocess.PIPE,
+        universal_newlines=True
+    )
+    height_output = height_result.stdout.strip()
+
+    # Get duration from the format section specifically
+    duration_result = subprocess.run(
+        ['ffprobe', '-i', input_file,
+         '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=p=0'],
+        stdout=subprocess.PIPE,
+        universal_newlines=True
+    )
+    duration_output = duration_result.stdout.strip()
+
+    if not height_output:
+        print(f"Could not detect a video stream in: {input_file}")
+        sys.exit(1)
+    if not duration_output:
+        print(f"Could not detect duration for: {input_file}")
+        sys.exit(1)
+
+    try:
+        height = int(height_output)
+        duration = float(duration_output)
+    except ValueError:
+        print(f"Unexpected ffprobe output for: {input_file}")
+        sys.exit(1)
+
+    return height, duration
+
+def count_audio_streams(input_file):
+    result = subprocess.run(
+        ['ffprobe', '-i', input_file, '-select_streams', 'a',
+         '-show_entries', 'stream=index', '-v', 'quiet', '-of', 'csv=p=0'],
+        stdout=subprocess.PIPE,
+        universal_newlines=True
+    )
+    return len([line for line in result.stdout.strip().splitlines() if line])
+
 def compress_video(input_file, target_size):
     output_file = output_folder + os.path.basename(input_file)
     temp_output = output_file + '.tmp.mp4'
 
-    # Get the duration and height of the video
-    result = subprocess.run(
-        ['ffprobe', '-i', input_file, '-show_entries', 'format=duration:stream=height', '-v', 'quiet', '-of', 'csv=p=0'],
-        stdout=subprocess.PIPE,
-        universal_newlines=True
-    )
-    height = int(result.stdout.splitlines()[0])
-    duration = float(result.stdout.splitlines()[2])
+    height, duration = probe_video(input_file)
+    audio_track_count = count_audio_streams(input_file)
 
     # Calculate target bitrate in bits per second
     audio_bitrate = audio_bitrate_kbps * 1000
     total_bitrate = (target_size * 8) / duration
     target_video_bitrate = max((total_bitrate - audio_bitrate) * safety_margin, 100_000)
 
-    # ffmpeg command to compress video
-    cmd = [
-        'ffmpeg',
-        '-y', 
-        '-hide_banner', '-loglevel', 'error',
-        '-i', input_file,
+    cmd = ['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', '-i', input_file]
+
+    if audio_track_count > 1:
+        filter_inputs = ''.join(f'[0:a:{i}]' for i in range(audio_track_count))
+        cmd += ['-filter_complex',
+                f'{filter_inputs}amix=inputs={audio_track_count}:duration=longest:normalize=0,alimiter=limit=0.95[aout]']
+        cmd += ['-map', '0:v:0', '-map', '[aout]']
+    elif audio_track_count == 1:
+        cmd += ['-map', '0:v:0', '-map', '0:a:0']
+    else:
+        cmd += ['-map', '0:v:0']   # silent video — no audio stream to map
+
+    cmd += [
         '-c:v', 'h264_nvenc',
         '-rc:v', 'cbr',
         '-b:v', str(int(target_video_bitrate)),
         '-bufsize', str(int(target_video_bitrate // 2)),
         '-maxrate', str(int(target_video_bitrate)),
-        '-c:a', 'aac', '-b:a', f'{audio_bitrate_kbps}k'
     ]
+
+    if audio_track_count > 0:
+        cmd += ['-c:a', 'aac', '-b:a', f'{audio_bitrate_kbps}k']
 
     # Add scaling filter if resolution is greater than 1080p
     if height > 1080:
