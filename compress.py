@@ -14,6 +14,14 @@ safety_margin = 0.97
 if output_folder == "" and sys.platform == 'win32':
     output_folder = os.path.join(os.environ['USERPROFILE'], 'Downloads') + '\\'
 
+def check_dependencies():
+    for tool in ('ffmpeg', 'ffprobe'):
+        try:
+            subprocess.run([tool, '-version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except FileNotFoundError:
+            print(f"'{tool}' was not found. Make sure it is installed and accessible in your system's PATH.")
+            sys.exit(1)
+
 def probe_video(input_file):
     # Get height of the first video stream specifically
     height_result = subprocess.run(
@@ -131,6 +139,8 @@ def compress_video(input_file, target_size):
     return output_file
 
 if __name__ == '__main__':
+    check_dependencies()
+
     if len(sys.argv) < 2:
         print("You must pass an input file as the first command line argument.")
         sys.exit(1)
