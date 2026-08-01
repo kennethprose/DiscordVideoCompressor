@@ -33,6 +33,8 @@ The configuration can be changed by modifying the following variables at the beg
   - Must use double slashes for python to interperate it properly
   - Must end in a slash
   - Example: "C:\\\\Users\\\\Joe\\\\Downloads\\\\"
+- `audio_bitrate_kbps`: Fixed bitrate for audio track in kilobytes per second. 128kbps is nearly indistinguishable.
+- `safety_margin`: A percentage value to aim for under the true target to minimize odds of just barely being oversized on the first pass. 0.97 is ideal for most videos. 
 
 ## Usage
 
