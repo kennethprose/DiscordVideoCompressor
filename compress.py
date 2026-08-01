@@ -16,6 +16,7 @@ if output_folder == "" and sys.platform == 'win32':
 
 def compress_video(input_file, target_size):
     output_file = output_folder + os.path.basename(input_file)
+    temp_output = output_file + '.tmp.mp4'
 
     # Get the duration and height of the video
     result = subprocess.run(
@@ -49,8 +50,14 @@ def compress_video(input_file, target_size):
     if height > 1080:
         cmd.extend(['-vf', 'scale=-1:1080'])
 
-    cmd.append(output_file)
-    subprocess.run(cmd)
+    cmd.append(temp_output)
+    result = subprocess.run(cmd)
+
+    if result.returncode != 0:            # NEW: catch ffmpeg failures instead of looping forever
+        print(f"ffmpeg failed to compress {input_file}")
+        sys.exit(1)
+
+    os.replace(temp_output, output_file)
 
     return output_file
 
