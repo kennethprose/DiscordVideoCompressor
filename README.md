@@ -55,3 +55,4 @@ The compressed video will be saved in the specified `output_folder`.
 ## Tips
 
 1. For convinience, you can create a shortcut to the compress.bat file and put that anywhere you like. Dragging and dropping files onto the shortcut will still work.
+2. It is best to save your videos with only a single audio track. Any more than that can cause issues.

@@ -3,9 +3,11 @@ import subprocess
 import sys
 
 # ------ CONFIG ------
-target_size_MB = 25
-max_size_MB = 25
+target_size_MB = 10
+max_size_MB = 10
 output_folder = ''
+audio_bitrate_kbps = 128
+safety_margin = 0.97
 # ------ CONFIG ------
 
 # Determine the Downloads folder dynamically
@@ -25,7 +27,9 @@ def compress_video(input_file, target_size):
     duration = float(result.stdout.splitlines()[2])
 
     # Calculate target bitrate in bits per second
-    target_bitrate = (target_size * 8) / duration
+    audio_bitrate = audio_bitrate_kbps * 1000
+    total_bitrate = (target_size * 8) / duration
+    target_video_bitrate = max((total_bitrate - audio_bitrate) * safety_margin, 100_000)
 
     # ffmpeg command to compress video
     cmd = [
@@ -34,10 +38,11 @@ def compress_video(input_file, target_size):
         '-hide_banner', '-loglevel', 'error',
         '-i', input_file,
         '-c:v', 'h264_nvenc',
-        '-b:v', str(int(target_bitrate)),
-        '-bufsize', str(int(target_bitrate)),
-        '-maxrate', str(int(target_bitrate)),
-        '-c:a', 'copy'
+        '-rc:v', 'cbr',
+        '-b:v', str(int(target_video_bitrate)),
+        '-bufsize', str(int(target_video_bitrate // 2)),
+        '-maxrate', str(int(target_video_bitrate)),
+        '-c:a', 'aac', '-b:a', f'{audio_bitrate_kbps}k'
     ]
 
     # Add scaling filter if resolution is greater than 1080p
@@ -77,7 +82,7 @@ if __name__ == '__main__':
             # If file is over absolute max, lower target and run again
             if output_file_size > max_size_MB * 1024 * 1024:
                 print(f'Output size too large. Recompressing...')
-                target_size -= 1024 * 1024
+                target_size -= 0.25 * 1024 * 1024
             else:
                 break
 
